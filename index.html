@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Pixel Cat</title>
+    <style>
+        /* --- CSS STYLING --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f4edd2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .game-container {
+            text-align: center;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .instruction {
+            color: #6b5b45;
+            font-weight: bold;
+            margin-bottom: 50px;
+            font-size: 1.1rem;
+            user-select: none;
+        }
+
+        /* Base Cat Setup */
+        .cat {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            transition: transform 0.1s ease-out;
+            cursor: pointer;
+        }
+
+        /* Badan Kucing (Pure CSS) */
+        .body {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            width: 90px;
+            height: 80px;
+            background: #a3c2f0; 
+            border: 4px solid #4a6fa5;
+            border-radius: 24px 24px 16px 16px;
+            z-index: 2;
+        }
+
+        /* Telinga Kucing & Animasi Twitching */
+        .ear {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: #a3c2f0;
+            border: 4px solid #4a6fa5;
+            z-index: 1;
+            transform-origin: bottom;
+            animation: twitchEar 4s infinite alternate;
+        }
+
+        .ear-left {
+            top: 22px;
+            left: 15px;
+            border-radius: 8px 0 0 0;
+            transform: rotate(-15deg);
+        }
+
+        .ear-right {
+            top: 22px;
+            right: 15px;
+            border-radius: 0 8px 0 0;
+            transform: rotate(15deg);
+            animation-delay: 2s;
+        }
+
+        /* Muka & Mata */
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 10px;
+        }
+
+        .eye {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 3px solid #4a6fa5;
+            border-radius: 50%;
+            top: 15px;
+        }
+
+        .eye-left { left: 15px; }
+        .eye-right { right: 15px; }
+
+        .pupil {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #4a6fa5;
+            border-radius: 50%;
+            top: 1px;
+            left: 1px;
+            transition: transform 0.1s ease;
+        }
+
+        .nose {
+            position: absolute;
+            width: 8px;
+            height: 6px;
+            background: #ffb3ba;
+            border-radius: 50%;
+            top: 28px;
+            left: calc(50% - 4px);
+        }
+
+        /* Buntut Kucing & Animasi Wiggle */
+        .tail {
+            position: absolute;
+            bottom: 25px;
+            right: -5px;
+            width: 16px;
+            height: 45px;
+            background: #a3c2f0;
+            border: 4px solid #4a6fa5;
+            border-radius: 10px;
+            z-index: 1;
+            transform-origin: bottom center;
+            animation: wagTail 1.5s infinite ease-in-out alternate;
+        }
+
+        /* Kaki */
+        .paws {
+            position: absolute;
+            bottom: 12px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 25px;
+            z-index: 3;
+        }
+        .paw {
+            width: 16px;
+            height: 12px;
+            background: #a3c2f0;
+            border: 3px solid #4a6fa5;
+            border-radius: 0 0 6px 6px;
+        }
+
+        /* --- ANIMASI KEYFRAMES --- */
+        @keyframes wagTail {
+            0% { transform: rotate(-10deg); }
+            100% { transform: rotate(20deg); }
+        }
+
+        @keyframes twitchEar {
+            0%, 90%, 100% { transform: scaleY(1); }
+            93%, 97% { transform: scaleY(0.8); }
+        }
+
+        /* Efek lompat dikit pas diklik */
+        .cat:active {
+            transform: scale(0.9) translateY(10px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <p class="instruction">Gerakkan kursor atau ketuk layar untuk berinteraksi dengan si Meow!</p>
+        
+        <div class="cat" id="pixel-cat">
+            <div class="ear ear-left"></div>
+            <div class="ear ear-right"></div>
+            <div class="body">
+                <div class="face">
+                    <div class="eye eye-left"><div class="pupil"></div></div>
+                    <div class="eye eye-right"><div class="pupil"></div></div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="tail"></div>
+            <div class="paws">
+                <div class="paw paw-left"></div>
+                <div class="paw paw-right"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+        const cat = document.getElementById('pixel-cat');
+        const pupils = document.querySelectorAll('.pupil');
+
+        function handleMove(clientX, clientY) {
+            const catRect = cat.getBoundingClientRect();
+            const catCenterX = catRect.left + catRect.width / 2;
+            const catCenterY = catRect.top + catRect.height / 2;
+
+            const deltaX = clientX - catCenterX;
+            const deltaY = clientY - catCenterY;
+
+            // Batasi pergerakan rotasi badan kucing
+            const angleX = Math.min(Math.max(deltaX * 0.05, -20), 20); 
+            const angleY = Math.min(Math.max(deltaY * 0.05, -15), 15);
+
+            cat.style.transform = `rotateY(${angleX}deg) rotateX(${-angleY}deg)`;
+
+            // Logika Pupil Mata Mengikuti Kursor
+            pupils.forEach(pupil => {
+                const pupilX = Math.min(Math.max(deltaX * 0.02, -3), 3);
+                const pupilY = Math.min(Math.max(deltaY * 0.02, -3), 3);
+                pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
+            });
+        }
+
+        // Respon Kursor Mouse (PC)
+        document.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX, e.clientY);
+        });
+
+        // Respon Sentuhan Layar (HP) - Perbaikan kode yang terpotong
+        document.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            handleMove(touch.clientX, touch.clientY);
+        });
+    </script>
+</body>
+</html>
